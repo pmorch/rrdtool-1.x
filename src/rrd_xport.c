@@ -323,14 +323,8 @@ static int rrd_xport_fn(
     free(step_list);
 
     *start =  im->start - im->start % (*step);
-    if ( im->start > *start ) {
-         *start = *start + *step;
-    }
-
-    *end = im->end - im->end % (*step);
-    if ( im->end > *end ) {
-         *end = *end + *step;
-    }
+    *end = im->end - im->end % (*step) + (*step);
+    
 
     /* room for rearranged data */
     /* this is a return value! */
@@ -630,9 +624,9 @@ static int rrd_xport_format_xmljson(int flags,stringbuffer_t *buffer,image_desc_
     }
   } else {
     if (json) {
-      snprintf(buf,sizeof(buf),"    \"%s\": %lld,\n",META_START_TAG,(long long int)start);
+      snprintf(buf,sizeof(buf),"    \"%s\": %lld,\n",META_START_TAG,(long long int)start+step);
     } else {
-      snprintf(buf,sizeof(buf),"    <%s>%lld</%s>\n",META_START_TAG,(long long int)start,META_START_TAG);
+      snprintf(buf,sizeof(buf),"    <%s>%lld</%s>\n",META_START_TAG,(long long int)start+step,META_START_TAG);
     }
   }
   addToBuffer(buffer,buf,0);
@@ -733,7 +727,7 @@ static int rrd_xport_format_xmljson(int flags,stringbuffer_t *buffer,image_desc_
   }
   addToBuffer(buffer,buf,0);
   /* iterate over data */
-  for (time_t ti = start; ti <= end; ti += step) {
+  for (time_t ti = start + step; ti < end; ti += step) {
     if (timefmt) {
       struct tm loc;
       localtime_r(&ti,&loc);
